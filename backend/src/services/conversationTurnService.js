@@ -1,5 +1,6 @@
 import { pool } from "../db/pool.js";
 import { generateConversationTurn } from "./aiConversationService.js";
+import { ensureBookingInvitation } from "./bookingService.js";
 import { syncLeadToHubspot } from "./hubspotSyncService.js";
 import { scoreLead } from "./scoringService.js";
 
@@ -164,7 +165,16 @@ export async function processConversationTurn({
     await client.query("COMMIT");
 
     let hubspotSync = null;
+    let booking = null;
     if (isComplete) {
+      booking = await ensureBookingInvitation({
+        lead: {
+          ...lead,
+          status: nextStatus,
+        },
+        scoring,
+      });
+
       hubspotSync = await syncLeadToHubspot({
         lead: {
           ...lead,
@@ -185,6 +195,7 @@ export async function processConversationTurn({
       scoring,
       status: nextStatus,
       isQualified: isComplete,
+      booking,
       hubspotSync,
     };
   } catch (error) {
