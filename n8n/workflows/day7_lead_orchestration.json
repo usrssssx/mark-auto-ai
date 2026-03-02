@@ -5,7 +5,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "lead-intake",
-        "responseMode": "responseNode",
+        "responseMode": "onReceived",
         "options": {}
       },
       "id": "f9de3b1f-27fa-48f2-9f9d-cdcb2e657001",
@@ -68,7 +68,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { leadId: $json.leadId, tenantKey: $item(0).$node['Lead Intake Trigger'].json.body.tenantKey || 'default' } }}",
+        "jsonBody": "={{ { leadId: $json.leadId, tenantKey: 'default' } }}",
         "options": {}
       },
       "id": "f9de3b1f-27fa-48f2-9f9d-cdcb2e657003",
@@ -77,21 +77,6 @@
       "typeVersion": 4.2,
       "position": [
         -180,
-        260
-      ]
-    },
-    {
-      "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ { intake: $item(0).$node['Send To Backend Intake'].json, qualification: $json } }}",
-        "options": {}
-      },
-      "id": "f9de3b1f-27fa-48f2-9f9d-cdcb2e657004",
-      "name": "Respond",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.2,
-      "position": [
-        100,
         260
       ]
     }
@@ -113,17 +98,6 @@
         [
           {
             "node": "Start Qualification Turn",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Start Qualification Turn": {
-      "main": [
-        [
-          {
-            "node": "Respond",
             "type": "main",
             "index": 0
           }

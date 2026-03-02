@@ -26,6 +26,8 @@ services:
         condition: service_healthy
     env_file:
       - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/ai_automation
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -41,6 +43,7 @@ services:
       N8N_PROTOCOL: http
       WEBHOOK_URL: http://localhost:5678/
       GENERIC_TIMEZONE: UTC
+      N8N_PROXY_HOPS: 1
       BACKEND_BASE_URL: http://backend:3000
     ports:
       - "5678:5678"

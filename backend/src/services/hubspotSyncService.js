@@ -141,7 +141,6 @@ function buildDealProperties({ lead, qualification, scoring }) {
       qualification.budgetMinUsd != null
         ? String(qualification.budgetMinUsd)
         : undefined,
-    hs_lead_status: scoring.temperature === "hot" ? "OPEN" : undefined,
     pipeline: config.hubspotDefaultPipeline || undefined,
     dealstage: config.hubspotDefaultDealStage || undefined,
   };
