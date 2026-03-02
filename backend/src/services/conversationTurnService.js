@@ -1,5 +1,6 @@
 import { pool } from "../db/pool.js";
 import { generateConversationTurn } from "./aiConversationService.js";
+import { syncLeadToHubspot } from "./hubspotSyncService.js";
 import { scoreLead } from "./scoringService.js";
 
 function normalizeQualification(raw) {
@@ -162,6 +163,18 @@ export async function processConversationTurn({
 
     await client.query("COMMIT");
 
+    let hubspotSync = null;
+    if (isComplete) {
+      hubspotSync = await syncLeadToHubspot({
+        lead: {
+          ...lead,
+          status: nextStatus,
+        },
+        qualification: mergedQualification,
+        scoring,
+      });
+    }
+
     return {
       notFound: false,
       forbidden: false,
@@ -172,6 +185,7 @@ export async function processConversationTurn({
       scoring,
       status: nextStatus,
       isQualified: isComplete,
+      hubspotSync,
     };
   } catch (error) {
     await client.query("ROLLBACK");
@@ -180,4 +194,3 @@ export async function processConversationTurn({
     client.release();
   }
 }
-

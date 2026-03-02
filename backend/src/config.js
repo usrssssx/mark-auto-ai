@@ -16,4 +16,9 @@ export const config = {
   openAiApiKey: process.env.OPENAI_API_KEY ?? "",
   openAiModel: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
   openAiBaseUrl: process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1",
+  hubspotAccessToken: process.env.HUBSPOT_ACCESS_TOKEN ?? "",
+  hubspotBaseUrl: process.env.HUBSPOT_BASE_URL ?? "https://api.hubapi.com",
+  hubspotDefaultDealStage: process.env.HUBSPOT_DEFAULT_DEAL_STAGE ?? "",
+  hubspotDefaultPipeline: process.env.HUBSPOT_DEFAULT_PIPELINE ?? "",
+  hubspotDealNamePrefix: process.env.HUBSPOT_DEAL_NAME_PREFIX ?? "AI Lead",
 };
