@@ -1,0 +1,98 @@
+{
+  "name": "Day7 Booking Webhook Forwarder",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "booking-event",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e6f20de0-cdf6-4a29-a8e9-2f1c6ef63001",
+      "name": "Booking Event Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -520,
+        200
+      ],
+      "webhookId": "day7-booking-event"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.BACKEND_BASE_URL || 'http://host.docker.internal:3000'}}/webhooks/booking",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.body}}",
+        "options": {}
+      },
+      "id": "e6f20de0-cdf6-4a29-a8e9-2f1c6ef63002",
+      "name": "Forward To Backend Booking Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -240,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "e6f20de0-cdf6-4a29-a8e9-2f1c6ef63003",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [
+        40,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Booking Event Trigger": {
+      "main": [
+        [
+          {
+            "node": "Forward To Backend Booking Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward To Backend Booking Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "versionId": "07775182-1764-4abb-a88d-1e3eadf07001",
+  "meta": {},
+  "id": "day7-booking-webhook-forwarder",
+  "tags": []
+}
+

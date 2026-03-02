@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "migrate": "node src/db/migrate.js"
+    "migrate": "node src/db/migrate.js",
+    "demo:day7": "bash scripts/demo_day7_flow.sh"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -15,4 +16,3 @@
     "zod": "^3.23.8"
   }
 }
-

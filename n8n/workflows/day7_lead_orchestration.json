@@ -1,0 +1,143 @@
+{
+  "name": "Day7 Lead Orchestration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f9de3b1f-27fa-48f2-9f9d-cdcb2e657001",
+      "name": "Lead Intake Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -740,
+        260
+      ],
+      "webhookId": "day7-lead-intake"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.BACKEND_BASE_URL || 'http://host.docker.internal:3000'}}/webhooks/lead",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-tenant-key",
+              "value": "={{$json.body.tenantKey || 'default'}}"
+            },
+            {
+              "name": "x-idempotency-key",
+              "value": "={{$json.body.idempotencyKey || ($json.body.externalLeadId ? ('n8n-' + $json.body.externalLeadId) : ('n8n-' + $execution.id))}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{$json.body}}",
+        "options": {}
+      },
+      "id": "f9de3b1f-27fa-48f2-9f9d-cdcb2e657002",
+      "name": "Send To Backend Intake",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -460,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.BACKEND_BASE_URL || 'http://host.docker.internal:3000'}}/conversation/next",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { leadId: $json.leadId, tenantKey: $item(0).$node['Lead Intake Trigger'].json.body.tenantKey || 'default' } }}",
+        "options": {}
+      },
+      "id": "f9de3b1f-27fa-48f2-9f9d-cdcb2e657003",
+      "name": "Start Qualification Turn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { intake: $item(0).$node['Send To Backend Intake'].json, qualification: $json } }}",
+        "options": {}
+      },
+      "id": "f9de3b1f-27fa-48f2-9f9d-cdcb2e657004",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.2,
+      "position": [
+        100,
+        260
+      ]
+    }
+  ],
+  "connections": {
+    "Lead Intake Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send To Backend Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send To Backend Intake": {
+      "main": [
+        [
+          {
+            "node": "Start Qualification Turn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Qualification Turn": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "versionId": "e6eeadf4-0fb6-4259-b54f-54d1223d7001",
+  "meta": {},
+  "id": "day7-lead-orchestration",
+  "tags": []
+}
