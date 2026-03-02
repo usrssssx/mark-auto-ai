@@ -1,5 +1,6 @@
 import express from "express";
 import { leadWebhookRouter } from "./routes/leadWebhookRoutes.js";
+import { conversationRouter } from "./routes/conversationRoutes.js";
 import { logger } from "./lib/logger.js";
 
 export function createApp() {
@@ -12,6 +13,7 @@ export function createApp() {
   });
 
   app.use("/webhooks", leadWebhookRouter);
+  app.use("/conversation", conversationRouter);
 
   app.use((error, _req, res, _next) => {
     logger.error("unhandled_error", {
@@ -23,4 +25,3 @@ export function createApp() {
 
   return app;
 }
-
