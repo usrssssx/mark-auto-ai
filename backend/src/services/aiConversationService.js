@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { logger } from "../lib/logger.js";
+import { requestJson } from "../lib/httpClient.js";
 
 const REQUIRED_FIELDS = ["budget", "timeline", "serviceType"];
 
@@ -192,33 +193,41 @@ async function callOpenAi({ lead, messages, existingQualification, customerMessa
     requiredFields: REQUIRED_FIELDS,
   };
 
-  const response = await fetch(`${config.openAiBaseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.openAiApiKey}`,
-    },
-    body: JSON.stringify({
-      model: config.openAiModel,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: buildSystemPrompt() },
-        { role: "user", content: JSON.stringify(userPayload) },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    logger.error("openai_call_failed", {
-      status: response.status,
-      body,
+  let result;
+  try {
+    result = await requestJson(`${config.openAiBaseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.openAiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.openAiModel,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: buildSystemPrompt() },
+          { role: "user", content: JSON.stringify(userPayload) },
+        ],
+      }),
+      retryLabel: "openai_chat_completion",
+    });
+  } catch (error) {
+    logger.error("openai_call_failed_network", {
+      error: error.message,
     });
     return null;
   }
 
-  const json = await response.json();
+  if (!result.ok) {
+    logger.error("openai_call_failed", {
+      status: result.status,
+      body: result.body,
+    });
+    return null;
+  }
+
+  const json = result.body;
   const content = json?.choices?.[0]?.message?.content;
   const parsed = extractJsonFromContent(content);
   if (!parsed) {
@@ -258,4 +267,3 @@ export async function generateConversationTurn({
     customerMessage,
   });
 }
-

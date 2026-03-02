@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { pool } from "../db/pool.js";
+import { requestJson } from "../lib/httpClient.js";
 import { logger } from "../lib/logger.js";
 
 function parseHubspotErrorBody(body) {
@@ -9,34 +10,28 @@ function parseHubspotErrorBody(body) {
 }
 
 async function hubspotRequest(path, { method = "GET", body } = {}) {
-  const response = await fetch(`${config.hubspotBaseUrl}${path}`, {
+  const result = await requestJson(`${config.hubspotBaseUrl}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${config.hubspotAccessToken}`,
       "Content-Type": "application/json",
     },
     body: body ? JSON.stringify(body) : undefined,
+    retryLabel: `hubspot_${method.toLowerCase()}_${path}`,
   });
 
-  if (!response.ok) {
-    let errorBody = "";
-    try {
-      errorBody = parseHubspotErrorBody(await response.json());
-    } catch {
-      errorBody = parseHubspotErrorBody(await response.text());
-    }
-
+  if (!result.ok) {
     const error = new Error(`HubSpot request failed: ${method} ${path}`);
-    error.httpStatus = response.status;
-    error.details = errorBody;
+    error.httpStatus = result.status;
+    error.details = parseHubspotErrorBody(result.body);
     throw error;
   }
 
-  if (response.status === 204) {
+  if (result.status === 204) {
     return null;
   }
 
-  return response.json();
+  return result.body;
 }
 
 async function searchContactByEmail(email) {

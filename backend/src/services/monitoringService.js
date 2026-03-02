@@ -8,8 +8,14 @@ function rowsToMap(rows) {
 }
 
 export async function getMonitoringOverview() {
-  const [leadStatusesRes, bookingStatusesRes, hubspotStatusesRes, totalsRes, events24hRes] =
-    await Promise.all([
+  const [
+    leadStatusesRes,
+    bookingStatusesRes,
+    hubspotStatusesRes,
+    totalsRes,
+    events24hRes,
+    latestLeadsRes,
+  ] = await Promise.all([
       pool.query(
         `
           SELECT status AS key, COUNT(*)::int AS value
@@ -40,7 +46,7 @@ export async function getMonitoringOverview() {
             COUNT(*)::int AS total_leads,
             COUNT(*) FILTER (WHERE created_at >= now() - interval '24 hours')::int AS leads_last_24h,
             ROUND(AVG(lead_score)::numeric, 2) AS avg_score,
-            COUNT(*) FILTER (WHERE status = 'qualified')::int AS qualified_total,
+            COUNT(*) FILTER (WHERE status IN ('qualified', 'meeting_booked'))::int AS qualified_total,
             COUNT(*) FILTER (WHERE status = 'meeting_booked')::int AS booked_total
           FROM leads;
         `,
@@ -56,6 +62,22 @@ export async function getMonitoringOverview() {
           ORDER BY count_last_24h DESC, event_type ASC;
         `,
       ),
+      pool.query(
+        `
+          SELECT
+            id,
+            source,
+            status,
+            lead_score,
+            lead_temperature,
+            booking_status,
+            hubspot_sync_status,
+            created_at
+          FROM leads
+          ORDER BY created_at DESC
+          LIMIT 10;
+        `,
+      ),
     ]);
 
   const totals = totalsRes.rows[0] ?? {
@@ -66,14 +88,30 @@ export async function getMonitoringOverview() {
     booked_total: 0,
   };
 
+  const totalLeads = Number(totals.total_leads ?? 0);
+  const qualifiedTotal = Number(totals.qualified_total ?? 0);
+  const bookedTotal = Number(totals.booked_total ?? 0);
+
+  const qualificationRatePct =
+    totalLeads > 0 ? Number(((qualifiedTotal / totalLeads) * 100).toFixed(2)) : 0;
+  const bookingRatePct =
+    totalLeads > 0 ? Number(((bookedTotal / totalLeads) * 100).toFixed(2)) : 0;
+  const closeFromQualifiedPct =
+    qualifiedTotal > 0 ? Number(((bookedTotal / qualifiedTotal) * 100).toFixed(2)) : 0;
+
   return {
     generatedAt: new Date().toISOString(),
     totals: {
-      totalLeads: Number(totals.total_leads ?? 0),
+      totalLeads,
       leadsLast24h: Number(totals.leads_last_24h ?? 0),
-      qualifiedTotal: Number(totals.qualified_total ?? 0),
-      bookedTotal: Number(totals.booked_total ?? 0),
+      qualifiedTotal,
+      bookedTotal,
       avgScore: totals.avg_score == null ? null : Number(totals.avg_score),
+    },
+    funnel: {
+      qualificationRatePct,
+      bookingRatePct,
+      closeFromQualifiedPct,
     },
     leadStatuses: rowsToMap(leadStatusesRes.rows),
     bookingStatuses: rowsToMap(bookingStatusesRes.rows),
@@ -82,6 +120,15 @@ export async function getMonitoringOverview() {
       eventType: row.event_type,
       count: Number(row.count_last_24h),
     })),
+    latestLeads: latestLeadsRes.rows.map((row) => ({
+      id: row.id,
+      source: row.source,
+      status: row.status,
+      score: row.lead_score,
+      temperature: row.lead_temperature,
+      bookingStatus: row.booking_status,
+      hubspotSyncStatus: row.hubspot_sync_status,
+      createdAt: row.created_at,
+    })),
   };
 }
-

@@ -1,4 +1,5 @@
 import express from "express";
+import { buildMonitoringDashboardHtml } from "../services/dashboardTemplateService.js";
 import { getMonitoringOverview } from "../services/monitoringService.js";
 
 export const monitoringRouter = express.Router();
@@ -12,3 +13,6 @@ monitoringRouter.get("/overview", async (_req, res, next) => {
   }
 });
 
+monitoringRouter.get("/dashboard", (_req, res) => {
+  return res.status(200).type("html").send(buildMonitoringDashboardHtml());
+});
